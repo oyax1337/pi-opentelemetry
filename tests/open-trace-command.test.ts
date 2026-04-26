@@ -3,8 +3,8 @@ import { buildTraceUrl, getOpenUrlCommand } from "../src/diagnostics/open-trace-
 
 describe("open trace command utils", () => {
   it("builds trace url", () => {
-    expect(buildTraceUrl("http://localhost:16686/trace", "abc")).toBe("http://localhost:16686/trace/abc");
-    expect(buildTraceUrl("http://localhost:16686/trace/", "abc")).toBe("http://localhost:16686/trace/abc");
+    expect(buildTraceUrl("http://localhost:5667/project/abc-123/traces", "def456")).toBe("http://localhost:5667/project/abc-123/traces/def456");
+    expect(buildTraceUrl("http://localhost:5667/project/abc-123/traces/", "def456")).toBe("http://localhost:5667/project/abc-123/traces/def456");
   });
 
   it("returns platform-specific open command", () => {

@@ -5,7 +5,7 @@ import type { MetricsExporter, PrivacyProfile, TelemetryConfig, TraceExporter } 
 const DEFAULT_SERVICE_NAME = "pi-opentelemetry";
 const DEFAULT_TRACES_ENDPOINT = "http://localhost:4318/v1/traces";
 const DEFAULT_METRICS_ENDPOINT = "http://localhost:4318/v1/metrics";
-const DEFAULT_TRACE_UI_BASE = "http://localhost:16686/trace";
+const DEFAULT_TRACE_UI_BASE = "http://localhost:5667";
 
 const DEFAULT_PATH_DENYLIST = [
   ".env",

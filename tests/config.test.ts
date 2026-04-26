@@ -24,7 +24,7 @@ describe("config", () => {
     expect(config.metrics.exporters).toEqual(["otlp"]);
     expect(config.metrics.endpoint).toBe("http://localhost:4318/v1/metrics");
     expect(config.metrics.exportIntervalMs).toBe(60_000);
-    expect(config.traceUiBaseUrl).toBe("http://localhost:16686/trace");
+    expect(config.traceUiBaseUrl).toBe("http://localhost:5667");
   });
 
   it("auto-detects service name from nearest package.json", () => {
