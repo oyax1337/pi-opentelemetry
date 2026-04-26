@@ -459,6 +459,15 @@ function exportSession(session: ParsedSession, tracer: Tracer): number {
 	if (session.cwd) {
 		sessionSpan.setAttribute("pi.session.file", session.cwd);
 	}
+
+	// Laminar association properties — enables Sessions tab, metadata filtering, and tags
+	sessionSpan.setAttribute("lmnr.association.properties.session_id", session.sessionId);
+	const cwd = session.cwd ?? "";
+	const project = cwd.split("/").filter(Boolean).pop() ?? "unknown";
+	sessionSpan.setAttribute("lmnr.association.properties.metadata.cwd", cwd);
+	sessionSpan.setAttribute("lmnr.association.properties.metadata.project", project);
+	sessionSpan.setAttribute("lmnr.association.properties.tags", [project]);
+
 	spanCount++;
 
 	// Extract first user prompt for session name
