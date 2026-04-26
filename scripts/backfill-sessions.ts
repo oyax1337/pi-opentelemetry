@@ -562,6 +562,14 @@ function exportSession(session: ParsedSession, tracer: Tracer): number {
 				toolSpan.setAttribute("pi.tool.name", toolName);
 				toolSpan.setAttribute("pi.tool.call_id", tc.id);
 				toolSpan.setAttribute("lmnr.span.type", "TOOL");
+
+				// Laminar Input panel: tool arguments
+				if (tc.arguments) {
+					try {
+						toolSpan.setAttribute("lmnr.span.input", JSON.stringify(tc.arguments));
+					} catch { /* skip */ }
+				}
+
 				spanCount++;
 
 				const result = toolResultMap.get(tc.id);
@@ -569,6 +577,20 @@ function exportSession(session: ParsedSession, tracer: Tracer): number {
 					const resultTime = parseTimestamp(
 						result.timestamp ?? result.message?.timestamp,
 					);
+
+					// Laminar Output panel: tool result content
+					const resultContent = result.message?.content;
+					if (resultContent !== undefined) {
+						try {
+							const out = typeof resultContent === "string"
+								? resultContent
+								: JSON.stringify(resultContent);
+							// Cap at 64KB to avoid oversized span attributes
+							toolSpan.setAttribute("lmnr.span.output",
+								out.length > 65536 ? out.slice(0, 65536) + "\u2026" : out);
+						} catch { /* skip */ }
+					}
+
 					if (result.message?.isError) {
 						toolSpan.setStatus({
 							code: SpanStatusCode.ERROR,

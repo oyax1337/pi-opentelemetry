@@ -266,6 +266,12 @@ export function createSpanManager(options: SpanManagerOptions) {
         ...options.payloadPolicy.toAttributes("pi.tool.input", sanitized),
       });
 
+      // Laminar reads lmnr.span.input for the Input panel
+      try {
+        const inputJson = typeof sanitized === "string" ? sanitized : JSON.stringify(sanitized);
+        span.setAttribute("lmnr.span.input", inputJson);
+      } catch { /* skip if not serializable */ }
+
       tools.set(args.toolCallId, span);
     },
 
@@ -285,6 +291,12 @@ export function createSpanManager(options: SpanManagerOptions) {
       });
 
       if (span) {
+        // Laminar reads lmnr.span.output for the Output panel
+        try {
+          const outputJson = typeof sanitized === "string" ? sanitized : JSON.stringify(sanitized);
+          span.setAttribute("lmnr.span.output", outputJson);
+        } catch { /* skip if not serializable */ }
+
         if (args.isError) {
           span.setStatus({ code: SpanStatusCode.ERROR, message: "tool_result error" });
         }
