@@ -154,6 +154,15 @@ export function createSpanManager(options: SpanManagerOptions) {
       if (args.sessionFile) {
         sessionSpan.setAttribute("pi.session.file", args.sessionFile);
       }
+
+      // Laminar association properties — enables Sessions tab, metadata filtering, and tags
+      sessionSpan.setAttribute("lmnr.association.properties.session_id", args.sessionId);
+      const cwd = args.sessionFile ?? process.cwd();
+      const project = cwd.split("/").filter(Boolean).pop() ?? "unknown";
+      sessionSpan.setAttribute("lmnr.association.properties.metadata.cwd", cwd);
+      sessionSpan.setAttribute("lmnr.association.properties.metadata.project", project);
+      sessionSpan.setAttribute("lmnr.association.properties.tags", [project]);
+
       setTraceId(sessionSpan);
     },
 
