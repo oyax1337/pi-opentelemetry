@@ -448,6 +448,34 @@ function previewText(value: string, maxChars: number): string {
 	return `${normalized.slice(0, maxChars)}…`;
 }
 
+/**
+ * Detect errors that slip through with isError=false.
+ * Checks details.error and content text starting with common error prefixes.
+ */
+function detectToolResultError(msg: MessagePayload | undefined): boolean {
+	if (!msg) return false;
+
+	// details field often carries an error key from MCP/tool wrappers
+	const details = (msg as unknown as Record<string, unknown>).details;
+	if (details && typeof details === "object") {
+		if ((details as Record<string, unknown>).error) return true;
+	}
+
+	// Check content text blocks for error prefixes
+	const content = msg.content;
+	const blocks = Array.isArray(content) ? content : content ? [content] : [];
+	for (const block of blocks) {
+		const text = typeof block === "string" ? block
+			: typeof block === "object" && block !== null ? (block as Record<string, unknown>).text : undefined;
+		if (typeof text === "string") {
+			const lower = text.trimStart().toLowerCase();
+			if (lower.startsWith("error:") || lower.startsWith("error -")) return true;
+		}
+	}
+
+	return false;
+}
+
 function exportSession(session: ParsedSession, tracer: Tracer): number {
 	let spanCount = 0;
 
@@ -600,7 +628,8 @@ function exportSession(session: ParsedSession, tracer: Tracer): number {
 						} catch { /* skip */ }
 					}
 
-					if (result.message?.isError) {
+					const hasError = result.message?.isError || detectToolResultError(result.message);
+					if (hasError) {
 						toolSpan.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: "tool_result error",

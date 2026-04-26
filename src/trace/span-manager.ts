@@ -72,6 +72,34 @@ function extractBashCommand(input: unknown): string | undefined {
   return typeof command === "string" ? command : undefined;
 }
 
+/**
+ * Detect errors that slip through with isError=false.
+ * Checks details.error and content text starting with common error prefixes.
+ */
+function detectOutputError(output: unknown): boolean {
+  if (!output || typeof output !== "object") return false;
+  const obj = output as Record<string, unknown>;
+
+  // details.error is a reliable signal from MCP/tool wrappers
+  if (obj.details && typeof obj.details === "object") {
+    const details = obj.details as Record<string, unknown>;
+    if (details.error) return true;
+  }
+
+  // Check content text blocks for error prefixes
+  const content = obj.content;
+  const blocks = Array.isArray(content) ? content : content ? [content] : [];
+  for (const block of blocks) {
+    const text = typeof block === "string" ? block : typeof block === "object" && block !== null ? (block as Record<string, unknown>).text : undefined;
+    if (typeof text === "string") {
+      const lower = text.trimStart().toLowerCase();
+      if (lower.startsWith("error:") || lower.startsWith("error -")) return true;
+    }
+  }
+
+  return false;
+}
+
 function buildToolSpanName(toolName: string, input: unknown): string {
   if (toolName !== "bash") {
     return `pi.tool: ${toolName}`;
@@ -306,7 +334,8 @@ export function createSpanManager(options: SpanManagerOptions) {
           span.setAttribute("lmnr.span.output", outputJson);
         } catch { /* skip if not serializable */ }
 
-        if (args.isError) {
+        const hasError = args.isError || detectOutputError(args.output);
+        if (hasError) {
           span.setStatus({ code: SpanStatusCode.ERROR, message: "tool_result error" });
         }
         safeEnd(span);
