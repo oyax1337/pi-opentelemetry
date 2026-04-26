@@ -299,10 +299,33 @@ export default function piOpenTelemetryExtension(pi: ExtensionAPI): void {
         ? String((event.message as { stopReason?: unknown }).stopReason ?? "")
         : undefined;
 
+    const provider =
+      event.message && typeof event.message === "object" && "provider" in event.message
+        ? String((event.message as { provider?: unknown }).provider ?? "")
+        : undefined;
+
+    const model =
+      event.message && typeof event.message === "object" && "model" in event.message
+        ? String((event.message as { model?: unknown }).model ?? "")
+        : undefined;
+
     spanManager?.onTurnEnd({
       turnIndex: event.turnIndex,
       toolResults: event.toolResults.length,
       stopReason,
+      usage: usage
+        ? {
+            inputTokens: usage.input,
+            outputTokens: usage.output,
+            totalCost: usage.cost.total,
+            inputCost: usage.cost.input,
+            outputCost: usage.cost.output,
+            cacheReadTokens: usage.cacheRead || undefined,
+            cacheWriteTokens: usage.cacheWrite || undefined,
+          }
+        : undefined,
+      provider: provider || undefined,
+      model: model || undefined,
     });
   });
 

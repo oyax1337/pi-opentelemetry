@@ -122,6 +122,69 @@ describe("span manager", () => {
     expect(toolSpan?.ended).toBe(true);
   });
 
+  it("sets gen_ai and lmnr attributes on turn and tool spans", () => {
+    const tracer = new FakeTracer();
+    const policy = createPayloadPolicy({
+      profile: "detailed-with-redaction",
+      payloadMaxBytes: 1024,
+      redactor: createRedactor({ extraSensitiveKeys: [], pathDenylist: [] }),
+    });
+
+    const manager = createSpanManager({ tracer: tracer as never, payloadPolicy: policy });
+
+    manager.onSessionStart({ sessionId: "session-1" });
+    manager.onAgentStart();
+    manager.onTurnStart({ turnIndex: 0 });
+    manager.onToolCall({
+      toolCallId: "tool-1",
+      toolName: "bash",
+      input: { command: "echo hi" },
+      turnIndex: 0,
+    });
+    manager.onToolResult({
+      toolCallId: "tool-1",
+      toolName: "bash",
+      isError: false,
+      output: { stdout: "hi" },
+      turnIndex: 0,
+    });
+    manager.onTurnEnd({
+      turnIndex: 0,
+      toolResults: 1,
+      stopReason: "stop",
+      usage: {
+        inputTokens: 100,
+        outputTokens: 50,
+        totalCost: 0.015,
+        inputCost: 0.006,
+        outputCost: 0.009,
+        cacheReadTokens: 500,
+        cacheWriteTokens: 200,
+      },
+      provider: "anthropic",
+      model: "claude-sonnet-4-20250514",
+    });
+    manager.onAgentEnd({ stopReason: "stop" });
+
+    // Check turn span has gen_ai attributes
+    const turnSpan = tracer.spans.find((s) => s.name === "pi.turn");
+    expect(turnSpan).toBeTruthy();
+    expect(turnSpan?.attributes["gen_ai.usage.input_tokens"]).toBe(100);
+    expect(turnSpan?.attributes["gen_ai.usage.output_tokens"]).toBe(50);
+    expect(turnSpan?.attributes["gen_ai.usage.cost"]).toBe(0.015);
+    expect(turnSpan?.attributes["gen_ai.usage.input_cost"]).toBe(0.006);
+    expect(turnSpan?.attributes["gen_ai.usage.output_cost"]).toBe(0.009);
+    expect(turnSpan?.attributes["gen_ai.system"]).toBe("anthropic");
+    expect(turnSpan?.attributes["gen_ai.request.model"]).toBe("claude-sonnet-4-20250514");
+    expect(turnSpan?.attributes["gen_ai.usage.cache_read_input_tokens"]).toBe(500);
+    expect(turnSpan?.attributes["gen_ai.usage.cache_creation_input_tokens"]).toBe(200);
+    expect(turnSpan?.attributes["lmnr.span.type"]).toBe("LLM");
+
+    // Check tool span has lmnr.span.type
+    const toolSpan = tracer.spans.find((s) => s.name.includes("pi.tool: bash"));
+    expect(toolSpan?.attributes["lmnr.span.type"]).toBe("TOOL");
+  });
+
   it("closes orphan spans on shutdown", () => {
     const tracer = new FakeTracer();
     const policy = createPayloadPolicy({

@@ -15,6 +15,18 @@ interface TurnEndArgs {
   turnIndex: number;
   toolResults: number;
   stopReason?: string;
+  // Laminar/GenAI semantic convention data
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalCost: number;
+    inputCost: number;
+    outputCost: number;
+    cacheReadTokens?: number;
+    cacheWriteTokens?: number;
+  };
+  provider?: string;
+  model?: string;
 }
 
 interface ToolCallArgs {
@@ -195,6 +207,7 @@ export function createSpanManager(options: SpanManagerOptions) {
         parentCtx,
       );
       turnSpan.setAttribute("pi.turn.index", args.turnIndex);
+      turnSpan.setAttribute("lmnr.span.type", "LLM");
       turns.set(args.turnIndex, turnSpan);
     },
 
@@ -208,6 +221,25 @@ export function createSpanManager(options: SpanManagerOptions) {
         "pi.turn.tool_results": args.toolResults,
         "pi.message.stop_reason": args.stopReason ?? "",
       });
+      if (args.usage) {
+        span.setAttribute("gen_ai.usage.input_tokens", args.usage.inputTokens);
+        span.setAttribute("gen_ai.usage.output_tokens", args.usage.outputTokens);
+        span.setAttribute("gen_ai.usage.cost", args.usage.totalCost);
+        span.setAttribute("gen_ai.usage.input_cost", args.usage.inputCost);
+        span.setAttribute("gen_ai.usage.output_cost", args.usage.outputCost);
+        if (args.usage.cacheReadTokens !== undefined) {
+          span.setAttribute("gen_ai.usage.cache_read_input_tokens", args.usage.cacheReadTokens);
+        }
+        if (args.usage.cacheWriteTokens !== undefined) {
+          span.setAttribute("gen_ai.usage.cache_creation_input_tokens", args.usage.cacheWriteTokens);
+        }
+      }
+      if (args.provider) {
+        span.setAttribute("gen_ai.system", args.provider);
+      }
+      if (args.model) {
+        span.setAttribute("gen_ai.request.model", args.model);
+      }
       safeEnd(span);
       turns.delete(args.turnIndex);
     },
@@ -221,6 +253,7 @@ export function createSpanManager(options: SpanManagerOptions) {
 
       span.setAttribute("pi.tool.name", args.toolName);
       span.setAttribute("pi.tool.call_id", args.toolCallId);
+      span.setAttribute("lmnr.span.type", "TOOL");
       if (args.turnIndex !== undefined) {
         span.setAttribute("pi.turn.index", args.turnIndex);
       }

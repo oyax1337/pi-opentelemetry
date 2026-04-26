@@ -1,14 +1,14 @@
 {
-  "name": "@devkade/pi-opentelemetry",
-  "version": "0.1.3",
+  "name": "pi-opentelemetry",
+  "version": "0.2.0",
   "description": "OpenTelemetry trace + metrics + diagnostics extension for Pi Coding Agent",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/devkade/pi-opentelemetry.git"
+    "url": "git+https://github.com/oyax1337/pi-opentelemetry.git"
   },
-  "homepage": "https://github.com/devkade/pi-opentelemetry#readme",
+  "homepage": "https://github.com/oyax1337/pi-opentelemetry#readme",
   "bugs": {
-    "url": "https://github.com/devkade/pi-opentelemetry/issues"
+    "url": "https://github.com/oyax1337/pi-opentelemetry/issues"
   },
   "type": "module",
   "main": "./src/index.ts",
