@@ -337,6 +337,8 @@ export function createSpanManager(options: SpanManagerOptions) {
         const hasError = args.isError || detectOutputError(args.output);
         if (hasError) {
           span.setStatus({ code: SpanStatusCode.ERROR, message: "tool_result error" });
+          // Laminar only reads error status from "exception" events, not OTel span status
+          span.addEvent("exception", { "exception.message": "tool_result error" });
         }
         safeEnd(span);
         tools.delete(args.toolCallId);

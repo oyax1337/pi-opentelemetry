@@ -634,6 +634,8 @@ function exportSession(session: ParsedSession, tracer: Tracer): number {
 							code: SpanStatusCode.ERROR,
 							message: "tool_result error",
 						});
+						// Laminar only reads error status from "exception" events, not OTel span status
+						toolSpan.addEvent("exception", { "exception.message": "tool_result error" });
 					}
 					toolSpan.end(resultTime || turn.endTime);
 				} else {
